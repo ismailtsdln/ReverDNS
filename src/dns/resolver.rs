@@ -1,10 +1,9 @@
-```rust
 use crate::error::{Result, ReverDNSError};
 use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::Duration;
-use tracing::{debug, error, warn};
+use tracing::debug;
 use trust_dns_resolver::config::*;
 use trust_dns_resolver::TokioAsyncResolver;
 
@@ -60,6 +59,7 @@ impl DnsResolver {
             tls_dns_name: None,
             trust_negative_responses: true,
             bind_addr: None,
+            tls_config: None,
         });
         config.add_name_server(NameServerConfig {
             socket_addr: SocketAddr::new(IpAddr::V4("1.1.1.1".parse().unwrap()), 53),
@@ -67,6 +67,7 @@ impl DnsResolver {
             tls_dns_name: None,
             trust_negative_responses: true,
             bind_addr: None,
+            tls_config: None,
         });
 
         let mut opts = ResolverOpts::default();
@@ -98,7 +99,7 @@ impl DnsResolver {
                 doh_provider.unwrap_or_else(|| "https://cloudflare-dns.com/dns-query".to_string());
 
             let mut config = ResolverConfig::new();
-            let mut names = String::new();
+            let names;
 
             if provider_url.contains("cloudflare") {
                 config.add_name_server(NameServerConfig {
@@ -107,6 +108,7 @@ impl DnsResolver {
                     tls_dns_name: Some("cloudflare-dns.com".to_string()),
                     trust_negative_responses: true,
                     bind_addr: None,
+                    tls_config: None,
                 });
                 names = "cloudflare-doh".to_string();
             } else if provider_url.contains("google") {
@@ -116,6 +118,7 @@ impl DnsResolver {
                     tls_dns_name: Some("dns.google".to_string()),
                     trust_negative_responses: true,
                     bind_addr: None,
+                    tls_config: None,
                 });
                 names = "google-doh".to_string();
             } else if provider_url.contains("quad9") {
@@ -125,6 +128,7 @@ impl DnsResolver {
                     tls_dns_name: Some("dns.quad9.net".to_string()),
                     trust_negative_responses: true,
                     bind_addr: None,
+                    tls_config: None,
                 });
                 names = "quad9-doh".to_string();
             } else {
@@ -135,6 +139,7 @@ impl DnsResolver {
                     tls_dns_name: Some("cloudflare-dns.com".to_string()),
                     trust_negative_responses: true,
                     bind_addr: None,
+                    tls_config: None,
                 });
                 names = "cloudflare-doh(fallback)".to_string();
             }
@@ -153,6 +158,7 @@ impl DnsResolver {
                     tls_dns_name: None,
                     trust_negative_responses: true,
                     bind_addr: None,
+                    tls_config: None,
                 });
                 names.push(ip_str.clone());
             }

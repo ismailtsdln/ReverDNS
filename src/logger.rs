@@ -1,5 +1,5 @@
-use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use crate::error::Result;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 /// Initialize logging with specified level
 pub fn init_logger(level: &str) -> Result<()> {
@@ -30,7 +30,9 @@ pub fn init_json_logger(level: &str) -> Result<()> {
     tracing_subscriber::registry()
         .with(env_filter)
         .with(fmt::layer().json().with_writer(std::io::stderr))
-        .init();
+        .try_init()
+        .map_err(|e| crate::error::ReverDNSError::InternalError(e.to_string()))
+        .unwrap_or(()); // Ignore error if logger is already initialized
 
     Ok(())
 }
