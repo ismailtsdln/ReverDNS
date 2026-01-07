@@ -16,7 +16,9 @@ pub fn init_logger(level: &str) -> Result<()> {
                 .with_thread_ids(true)
                 .with_line_number(true),
         )
-        .init();
+        .try_init()
+        .map_err(|e| crate::error::ReverDNSError::InternalError(e.to_string()))
+        .unwrap_or(()); // Ignore error if logger is already initialized
 
     Ok(())
 }

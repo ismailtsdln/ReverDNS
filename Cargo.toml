@@ -37,7 +37,7 @@ lazy_static = "1.4"
 tokio-test = "0.4"
 mockito = "1.2"
 tempfile = "3.8"
-criterion = "0.5"
+criterion = { version = "0.5", features = ["async_tokio"] }
 
 [[bench]]
 name = "dns_lookup_benchmark"
