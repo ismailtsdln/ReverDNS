@@ -136,10 +136,8 @@ impl DnsResolver {
                     })
                     .map(|h| h.trim_end_matches('.').to_string());
 
-                let ttl = lookup_result.as_lookup().valid_until()
-                    .duration_since(std::time::SystemTime::now())
-                    .ok()
-                    .map(|d| d.as_secs() as u32);
+                // TTL is typically not available in reverse lookups, set to None
+                let ttl: Option<u32> = None;
 
                 debug!("Lookup successful for {}: {:?}", ip, hostname);
 

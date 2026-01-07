@@ -49,8 +49,10 @@ pub fn format_csv(results: &[LookupResult]) -> Result<String> {
     }
 
     wtr.flush()?;
-    let data = wtr.into_inner()?;
-    Ok(String::from_utf8(data)?)
+    let data = wtr.into_inner()
+        .map_err(|e| crate::error::ReverDNSError::InternalError(format!("CSV writer error: {}", e)))?;
+    String::from_utf8(data)
+        .map_err(|e| crate::error::ReverDNSError::Utf8Error(e))
 }
 
 #[cfg(test)]

@@ -31,6 +31,9 @@ pub enum ReverDNSError {
     #[error("CSV error: {0}")]
     CsvError(#[from] csv::Error),
 
+    #[error("UTF-8 error: {0}")]
+    Utf8Error(#[from] std::string::FromUtf8Error),
+
     #[error("Invalid resolver: {0}")]
     InvalidResolver(String),
 
