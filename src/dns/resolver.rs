@@ -1,3 +1,4 @@
+```rust
 use crate::error::{Result, ReverDNSError};
 use std::net::IpAddr;
 use std::net::SocketAddr;
@@ -5,7 +6,6 @@ use std::str::FromStr;
 use std::time::Duration;
 use tracing::{debug, error, warn};
 use trust_dns_resolver::config::*;
-use trust_dns_resolver::proto::rr::RecordType;
 use trust_dns_resolver::TokioAsyncResolver;
 
 /// DNS lookup result

@@ -3,7 +3,6 @@ use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
-#[tokio::test]
 async fn test_dns_resolver_creation() {
     let resolver = DnsResolver::new(5, 1, 100).await;
     assert!(resolver.is_ok());
