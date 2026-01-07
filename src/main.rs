@@ -1,5 +1,7 @@
 use clap::Parser;
+use colored::*;
 use futures::{stream, StreamExt};
+use indicatif::{ProgressBar, ProgressStyle};
 use reverdns::{
     cli::Args,
     dns::DnsResolver,
@@ -23,19 +25,43 @@ async fn main() {
         std::process::exit(1);
     }
 
+    print_banner();
+
     // Validate arguments
     if let Err(e) = args.validate() {
         error!("Invalid arguments: {}", e);
-        eprintln!("Error: {}", e);
+        eprintln!("{} {}", "Error:".red().bold(), e);
         std::process::exit(e.exit_code());
     }
 
     // Run the application
     if let Err(e) = run(args).await {
         error!("Application error: {}", e);
-        eprintln!("Error: {}", e);
+        eprintln!("{} {}", "Error:".red().bold(), e);
         std::process::exit(e.exit_code());
     }
+}
+
+fn print_banner() {
+    let banner = r#"
+    ____                      ____  _   ______
+   / __ \___ _   _____  _____/ __ \/ | / / ...
+  / /_/ / _ \ | / / _ \/ ___/ / / /  |/ / /__ 
+ / _, _/  __/ |/ /  __/ /  / /_/ / /|  /___  /
+/_/ |_|\___/|___/\___/_/  /_____/_/ |_//____/ 
+                                               
+"#;
+    eprintln!("{}", banner.cyan().bold());
+    eprintln!(
+        "{} v{}",
+        "ReverDNS".green().bold(),
+        env!("CARGO_PKG_VERSION")
+    );
+    eprintln!(
+        "{}",
+        "High-performance reverse DNS lookup tool".blue().italic()
+    );
+    eprintln!();
 }
 
 async fn run(args: Args) -> Result<()> {
@@ -57,14 +83,25 @@ async fn run(args: Args) -> Result<()> {
     }
 
     info!("Processing {} IP addresses", ips.len());
+    eprintln!(
+        "{} {} IP addresses to process",
+        "ℹ".blue().bold(),
+        ips.len()
+    );
 
     // Create DNS resolver
     let resolver = if !args.resolver.is_empty() || args.dns_over_https {
         if !args.resolver.is_empty() {
             info!("Using custom resolvers: {:?}", args.resolver);
+            eprintln!("{} Using custom resolvers", "ℹ".blue().bold());
         }
         if args.dns_over_https {
             info!("Using DNS-over-HTTPS");
+            eprintln!(
+                "{} Using DNS-over-HTTPS ({})",
+                "ℹ".blue().bold(),
+                args.doh_provider.clone().unwrap_or_default()
+            );
         }
 
         DnsResolver::with_resolvers(
@@ -90,24 +127,32 @@ async fn run(args: Args) -> Result<()> {
 
     let resolver_ref = &resolver;
 
+    // Initialize Progress Bar
+    let pb = ProgressBar::new(ips.len() as u64);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({per_sec}, {eta})")
+        .unwrap()
+        .progress_chars("#>-"));
+
     // Concurrent processing loop
     let results = stream::iter(ips)
-        .map(|ip| async move {
-            // Apply rate limit delay (simple approximation)
-            // For strict token bucket, use a proper rate limiter crate if needed,
-            // but for this implementation sleep is sufficient for "max X per sec" on average per worker
-            // Note: This throttle is per-item, but with concurrency it might drift.
-            // For strict global rate limiting, we'd need a shared governor.
-            // Given "rate-limit" is "lookups per second", we can just sleep a bit.
-            tokio::time::sleep(rate_limit_interval).await;
-
-            resolver_ref.lookup(&ip).await
+        .map(|ip| {
+            let pb = pb.clone();
+            async move {
+                // Apply rate limit delay (simple approximation)
+                tokio::time::sleep(rate_limit_interval).await;
+                let result = resolver_ref.lookup(&ip).await;
+                pb.inc(1);
+                result
+            }
         })
         .buffer_unordered(args.concurrency)
         .collect::<Vec<_>>()
         .await;
 
-    // Unwrap results (we only have Ok(LookupResult) from lookup, but the stream is Result<,>)
+    pb.finish_with_message("Done");
+
+    // Unwrap results
     let results: Vec<reverdns::LookupResult> = results
         .into_iter()
         .filter_map(|r| match r {
@@ -130,6 +175,11 @@ async fn run(args: Args) -> Result<()> {
     // Write output
     if let Some(output_file) = &args.output {
         info!("Writing results to file: {}", output_file);
+        eprintln!(
+            "{} Writing results to {}",
+            "✔".green().bold(),
+            output_file.white()
+        );
         fs::write(output_file, &output)?;
     } else {
         println!("{}", output);
@@ -184,24 +234,29 @@ fn print_statistics(results: &[reverdns::LookupResult], total_time_ms: u128) {
         results.iter().map(|r| r.latency_ms as f64).sum::<f64>() / results.len() as f64
     };
 
-    println!("\n=== Statistics ===");
-    println!("Total lookups: {}", results.len());
-    println!("Successful: {}", successful);
-    println!("Failed: {}", failed);
+    println!("\n{}", "=== Statistics ===".yellow().bold());
+    println!("Total lookups: {}", results.len().to_string().cyan());
+    println!("Successful:    {}", successful.to_string().green());
+    println!("Failed:        {}", failed.to_string().red());
 
     if !results.is_empty() {
-        println!(
-            "Success rate: {:.2}%",
-            (successful as f64 / results.len() as f64) * 100.0
-        );
+        let rate = (successful as f64 / results.len() as f64) * 100.0;
+        let color_rate = if rate > 90.0 {
+            rate.to_string().green()
+        } else if rate > 50.0 {
+            rate.to_string().yellow()
+        } else {
+            rate.to_string().red()
+        };
+        println!("Success rate:  {}%", color_rate);
     }
 
-    println!("Total time: {}ms", total_time_ms);
-    println!("Average latency: {:.2}ms", avg_latency);
+    println!("Total time:    {}ms", total_time_ms);
+    println!("Avg latency:   {:.2}ms", avg_latency);
 
     if total_time_ms > 0 {
         println!(
-            "Throughput: {:.2} lookups/sec",
+            "Throughput:    {:.2} lookups/sec",
             (results.len() as f64 / total_time_ms as f64) * 1000.0
         );
     }

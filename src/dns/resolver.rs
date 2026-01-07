@@ -94,76 +94,75 @@ impl DnsResolver {
         use_doh: bool,
         doh_provider: Option<String>,
     ) -> Result<Self> {
-        let (config, resolver_names) = if use_doh {
-            let provider_url =
+        let mut config = ResolverConfig::new();
+        let mut names = Vec::new();
+
+        // 1. Add standard UDP resolvers
+        for ip_str in resolver_ips {
+            let ip_addr = IpAddr::from_str(ip_str)
+                .map_err(|_| ReverDNSError::InvalidResolver(ip_str.to_string()))?;
+
+            config.add_name_server(NameServerConfig {
+                socket_addr: SocketAddr::new(ip_addr, 53),
+                protocol: Protocol::Udp,
+                tls_dns_name: None,
+                trust_negative_responses: true,
+                bind_addr: None,
+                tls_config: None,
+            });
+            names.push(ip_str.clone());
+        }
+
+        // 2. Add DoH resolver if requested
+        if use_doh {
+            let provider_url_str =
                 doh_provider.unwrap_or_else(|| "https://cloudflare-dns.com/dns-query".to_string());
+            names.push(format!("DoH({})", provider_url_str));
 
-            let mut config = ResolverConfig::new();
-            let names;
+            // Parse the URL
+            let url = url::Url::parse(&provider_url_str)
+                .map_err(|e| ReverDNSError::ConfigError(format!("Invalid DoH URL: {}", e)))?;
 
-            if provider_url.contains("cloudflare") {
+            let host_str = url
+                .host_str()
+                .ok_or_else(|| ReverDNSError::ConfigError("DoH URL missing host".to_string()))?;
+            let port = url.port_or_known_default().unwrap_or(443);
+
+            // Resolve the hostname to an IP (bootstrap)
+            // We use tokio's lookup_host which uses the system resolver
+            let socket_addrs: Vec<SocketAddr> =
+                tokio::net::lookup_host(format!("{}:{}", host_str, port))
+                    .await
+                    .map_err(|e| {
+                        ReverDNSError::NetworkError(format!(
+                            "Failed to bootstrap DoH host {}: {}",
+                            host_str, e
+                        ))
+                    })?
+                    .collect();
+
+            if let Some(socket_addr) = socket_addrs.first() {
                 config.add_name_server(NameServerConfig {
-                    socket_addr: SocketAddr::new(IpAddr::V4("1.1.1.1".parse().unwrap()), 443),
+                    socket_addr: *socket_addr,
                     protocol: Protocol::Https,
-                    tls_dns_name: Some("cloudflare-dns.com".to_string()),
+                    tls_dns_name: Some(host_str.to_string()),
                     trust_negative_responses: true,
                     bind_addr: None,
                     tls_config: None,
                 });
-                names = "cloudflare-doh".to_string();
-            } else if provider_url.contains("google") {
-                config.add_name_server(NameServerConfig {
-                    socket_addr: SocketAddr::new(IpAddr::V4("8.8.8.8".parse().unwrap()), 443),
-                    protocol: Protocol::Https,
-                    tls_dns_name: Some("dns.google".to_string()),
-                    trust_negative_responses: true,
-                    bind_addr: None,
-                    tls_config: None,
-                });
-                names = "google-doh".to_string();
-            } else if provider_url.contains("quad9") {
-                config.add_name_server(NameServerConfig {
-                    socket_addr: SocketAddr::new(IpAddr::V4("9.9.9.9".parse().unwrap()), 5053),
-                    protocol: Protocol::Https,
-                    tls_dns_name: Some("dns.quad9.net".to_string()),
-                    trust_negative_responses: true,
-                    bind_addr: None,
-                    tls_config: None,
-                });
-                names = "quad9-doh".to_string();
+                debug!("Added DoH resolver: {} ({})", host_str, socket_addr);
             } else {
-                // Fallback to cloudflare for generic default
-                config.add_name_server(NameServerConfig {
-                    socket_addr: SocketAddr::new(IpAddr::V4("1.1.1.1".parse().unwrap()), 443),
-                    protocol: Protocol::Https,
-                    tls_dns_name: Some("cloudflare-dns.com".to_string()),
-                    trust_negative_responses: true,
-                    bind_addr: None,
-                    tls_config: None,
-                });
-                names = "cloudflare-doh(fallback)".to_string();
+                return Err(ReverDNSError::ConfigError(format!(
+                    "Could not resolve IP for DoH provider: {}",
+                    host_str
+                )));
             }
-            (config, names)
-        } else {
-            let mut config = ResolverConfig::new();
-            let mut names = Vec::new();
+        }
 
-            for ip_str in resolver_ips {
-                let ip_addr = IpAddr::from_str(ip_str)
-                    .map_err(|_| ReverDNSError::InvalidResolver(ip_str.to_string()))?;
-
-                config.add_name_server(NameServerConfig {
-                    socket_addr: SocketAddr::new(ip_addr, 53),
-                    protocol: Protocol::Udp,
-                    tls_dns_name: None,
-                    trust_negative_responses: true,
-                    bind_addr: None,
-                    tls_config: None,
-                });
-                names.push(ip_str.clone());
-            }
-            (config, names.join(","))
-        };
+        // If no resolvers added (neither UDP nor DoH), fallback to default
+        if config.name_servers().is_empty() {
+            return Self::new(timeout_secs, retry_count, retry_backoff_ms).await;
+        }
 
         let mut opts = ResolverOpts::default();
         opts.timeout = Duration::from_secs(timeout_secs);
@@ -176,7 +175,7 @@ impl DnsResolver {
             timeout: Duration::from_secs(timeout_secs),
             retry_count,
             retry_backoff: Duration::from_millis(retry_backoff_ms),
-            resolver_names,
+            resolver_names: names.join(","),
         })
     }
 
