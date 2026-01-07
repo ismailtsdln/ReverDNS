@@ -108,6 +108,35 @@ let result = tokio::time::timeout(
 
 ---
 
+### 4. **Argument Short Flag Conflict (src/cli/args.rs)**
+
+**Severity**: 🔴 Critical
+
+**Issue**:
+- Both `--resolver` and `--rate-limit` were using the short flag `-r`
+- Caused a runtime panic at application startup due to `clap` assertion
+
+**Location**: `src/cli/args.rs` - `Args` struct
+
+**Original Code**:
+```rust
+#[arg(short, long, value_name = "RESOLVER")]
+pub resolver: Vec<String>,
+
+#[arg(short, long, value_name = "PER_SEC", default_value = "100")]
+pub rate_limit: u32,
+```
+
+**Fixed Code**:
+```rust
+#[arg(short = 'l', long, value_name = "PER_SEC", default_value = "100")]
+pub rate_limit: u32,
+```
+
+**Impact**: Fixed runtime crash preventing application from starting
+
+---
+
 ## Testing
 
 All fixes have been validated with:
