@@ -78,7 +78,7 @@ pub struct Args {
     pub concurrency: usize,
 
     /// Rate limit: lookups per second
-    #[arg(short, long, value_name = "PER_SEC", default_value = "100")]
+    #[arg(short = 'l', long, value_name = "PER_SEC", default_value = "100")]
     pub rate_limit: u32,
 
     /// Use DNS-over-HTTPS (DoH)
