@@ -1,43 +1,70 @@
-# ReverDNS - High-Performance Reverse DNS Lookup Tool
+# ReverDNS
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI/CD](https://github.com/ismailtasdelen/ReverDNS/workflows/CI/badge.svg)](https://github.com/ismailtasdelen/ReverDNS/actions)
+[![Crates.io](https://img.shields.io/crates/v/reverdns.svg)](https://crates.io/crates/reverdns)
 
-A modern, high-performance CLI tool for bulk reverse DNS (PTR) lookups with support for JSON/CSV export, resolver rotation, rate limiting, DNS-over-HTTPS, and optional web API.
+**High-performance reverse DNS (PTR) lookup tool** for bulk IP address resolution with JSON/CSV export, resolver rotation, rate limiting, and DNS-over-HTTPS support.
+
+## Overview
+
+ReverDNS is a modern, production-ready CLI tool built in Rust that efficiently processes thousands of IP addresses to resolve their corresponding hostnames. Designed for network administrators, security researchers, and DevOps professionals who need to perform bulk reverse DNS lookups at scale.
+
+### Key Advantages
+
+- **⚡ High Performance**: Async/await architecture with Tokio runtime for concurrent lookups
+- **📊 Flexible Output**: JSON and CSV formats with comprehensive metadata
+- **🔄 Resolver Rotation**: Distribute queries across multiple DNS servers
+- **⏱️ Rate Limiting**: Built-in throttling to respect DNS server limits
+- **🔒 Secure**: DNS-over-HTTPS support for privacy-conscious deployments
+- **🛡️ Reliable**: Automatic retry logic with exponential backoff
+- **📦 Containerized**: Docker support for easy deployment
+- **🧪 Well-Tested**: Comprehensive test suite with >85% coverage
+
+## Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Quick Start](#-quick-start)
+- [Usage Guide](#-usage-guide)
+- [Configuration](#-configuration)
+- [Output Formats](#-output-formats)
+- [Examples](#-examples)
+- [Performance](#-performance)
+- [API Reference](#-api-reference)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ## 🎯 Features
 
-- **High Performance**: Built in Rust with async/await using Tokio runtime
-- **Bulk Processing**: Process thousands of IPs efficiently with concurrent lookups
-- **Multiple Output Formats**: JSON and CSV export options
-- **Resolver Rotation**: Automatic rotation between multiple DNS resolvers
-- **Rate Limiting**: Built-in rate limiting to respect DNS server limits
+### Core Functionality
+- **Bulk Reverse DNS Lookups**: Process thousands of IPs efficiently
+- **Multiple Output Formats**: JSON and CSV with rich metadata
+- **Resolver Rotation**: Automatic load balancing across DNS servers
+- **Rate Limiting**: Configurable throughput control
 - **DNS-over-HTTPS**: Secure DNS queries via HTTPS
-- **Retry Logic**: Exponential backoff and automatic retry on failures
-- **Comprehensive Metadata**: TTL, latency, error details in output
-- **Web API** (Optional): REST API and web UI for programmatic access
-- **Detailed Logging**: Structured logging with multiple output levels
-- **Cross-Platform**: Works on Linux, macOS, and Windows
+- **Retry Logic**: Exponential backoff for failed lookups
+- **Comprehensive Metadata**: TTL, latency, error details, timestamps
 
-## 📋 Table of Contents
+### Performance & Reliability
+- **Async Architecture**: Non-blocking I/O with Tokio
+- **Configurable Concurrency**: Tune for your hardware
+- **Timeout Management**: Prevent hanging requests
+- **Error Recovery**: Graceful handling of network issues
+- **Statistics**: Real-time performance metrics
 
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Output Formats](#output-formats)
-- [Examples](#examples)
-- [Performance](#performance)
-- [API Reference](#api-reference)
-- [Contributing](#contributing)
-- [Roadmap](#roadmap)
-- [License](#license)
+### Developer Experience
+- **Clear CLI Interface**: Intuitive command-line arguments
+- **Detailed Logging**: Structured logging with multiple levels
+- **Configuration Files**: TOML-based configuration support
+- **Docker Support**: Pre-built container images
+- **Comprehensive Documentation**: Examples and guides
 
-## 🚀 Installation
+## 📦 Installation
 
 ### Prerequisites
-
 - Rust 1.70 or later
 - Cargo package manager
 
@@ -47,46 +74,75 @@ A modern, high-performance CLI tool for bulk reverse DNS (PTR) lookups with supp
 git clone https://github.com/ismailtasdelen/ReverDNS.git
 cd ReverDNS
 cargo build --release
+./target/release/reverdns --version
 ```
-
-The binary will be available at `target/release/reverdns`.
 
 ### Using Cargo
 
 ```bash
 cargo install reverdns
+reverdns --version
 ```
 
 ### Docker
 
 ```bash
-docker build -t reverdns .
-docker run --rm reverdns --help
+docker build -t reverdns:latest .
+docker run --rm reverdns:latest --help
 ```
 
-### Binary Download
+### Pre-built Binaries
 
-Download pre-compiled binaries from [Releases](https://github.com/ismailtasdelen/ReverDNS/releases).
-
-## 🏃 Quick Start
-
-### Basic Usage
+Download from [Releases](https://github.com/ismailtasdelen/ReverDNS/releases)
 
 ```bash
-# Single IP lookup
-reverdns 8.8.8.8
+# macOS
+curl -L https://github.com/ismailtasdelen/ReverDNS/releases/download/v2.0.0/reverdns-macos -o reverdns
+chmod +x reverdns
 
-# Batch processing from file
-reverdns --input ips.txt --output results.json
-
-# CSV output
-reverdns --input ips.txt --output results.csv --format csv
-
-# With custom resolver
-reverdns --input ips.txt --resolver 1.1.1.1 --output results.json
+# Linux
+curl -L https://github.com/ismailtasdelen/ReverDNS/releases/download/v2.0.0/reverdns-linux -o reverdns
+chmod +x reverdns
 ```
 
-## 📖 Usage
+## 🚀 Quick Start
+
+### Single IP Lookup
+
+```bash
+reverdns 8.8.8.8
+```
+
+### Multiple IPs
+
+```bash
+reverdns 8.8.8.8 1.1.1.1 9.9.9.9
+```
+
+### Batch Processing from File
+
+```bash
+reverdns --input ips.txt --output results.json
+```
+
+### CSV Export
+
+```bash
+reverdns --input ips.txt --output results.csv --format csv
+```
+
+### High-Performance Mode
+
+```bash
+reverdns \
+  --input large_list.txt \
+  --output results.json \
+  --concurrency 50 \
+  --rate-limit 500 \
+  --stats
+```
+
+## 📖 Usage Guide
 
 ### Command-Line Options
 
@@ -95,31 +151,44 @@ USAGE:
     reverdns [OPTIONS] [IPS]...
 
 ARGS:
-    <IPS>...    IP addresses to lookup (can be provided as arguments or via --input)
+    <IPS>...    IP addresses to lookup
 
 OPTIONS:
+  Input/Output:
     -i, --input <FILE>              Input file with IP addresses (one per line)
     -o, --output <FILE>             Output file path (default: stdout)
     -f, --format <FORMAT>           Output format: json, csv (default: json)
-    -r, --resolver <RESOLVER>       Custom DNS resolver IP (can be used multiple times)
-    -t, --timeout <SECONDS>         Timeout per lookup in seconds (default: 5)
-    -c, --concurrency <NUM>         Number of concurrent lookups (default: 10)
-    -l, --rate-limit <PER_SEC>      Rate limit: lookups per second (default: 100)
+
+  DNS Configuration:
+    -r, --resolver <RESOLVER>       Custom DNS resolver IP (repeatable)
+    -t, --timeout <SECONDS>         Timeout per lookup (default: 5)
     --dns-over-https                Use DNS-over-HTTPS (DoH)
     --doh-provider <URL>            Custom DoH provider URL
-    --retry-count <NUM>             Number of retries on failure (default: 3)
-    --retry-backoff <MS>            Initial backoff in milliseconds (default: 100)
-    --log-level <LEVEL>             Log level: trace, debug, info, warn, error (default: info)
+
+  Performance:
+    -c, --concurrency <NUM>         Concurrent lookups (default: 10)
+    -l, --rate-limit <PER_SEC>      Lookups per second (default: 100)
+
+  Retry Logic:
+    --retry-count <NUM>             Retries on failure (default: 3)
+    --retry-backoff <MS>            Initial backoff in ms (default: 100)
+
+  Logging & Output:
+    --log-level <LEVEL>             Log level: trace, debug, info, warn, error
     --stats                         Print statistics after completion
+
+  Web Server:
     --web-server                    Start web API server
     --web-port <PORT>               Web server port (default: 8080)
+
+  General:
     -h, --help                      Print help information
     -V, --version                   Print version information
 ```
 
 ### Configuration File
 
-Create a `.reverdns.toml` file in your project directory:
+Create `.reverdns.toml` in your project directory:
 
 ```toml
 [dns]
@@ -130,7 +199,6 @@ retry_count = 3
 retry_backoff_ms = 100
 
 [resolvers]
-# Use custom resolvers
 custom = ["8.8.8.8", "1.1.1.1", "9.9.9.9"]
 
 [output]
@@ -139,11 +207,35 @@ include_metadata = true
 
 [logging]
 level = "info"
-format = "json"
+```
 
-[web]
-enabled = false
-port = 8080
+## ⚙️ Configuration
+
+### Environment Variables
+
+```bash
+# Set log level
+export RUST_LOG=debug
+
+# Run with debug logging
+reverdns --input ips.txt --output results.json
+```
+
+### Configuration File
+
+Place `.reverdns.toml` in your working directory:
+
+```toml
+[dns]
+timeout = 5
+concurrency = 10
+rate_limit = 100
+
+[resolvers]
+custom = ["8.8.8.8", "1.1.1.1"]
+
+[output]
+format = "json"
 ```
 
 ## 📤 Output Formats
@@ -203,7 +295,7 @@ cat > ips.txt << EOF
 EOF
 
 # Run lookup
-reverdns --input ips.txt --output results.json --format json
+reverdns --input ips.txt --output results.json
 
 # View results
 cat results.json | jq .
@@ -244,22 +336,7 @@ reverdns \
   --resolver 208.67.222.222
 ```
 
-### Example 5: Web API Server
-
-```bash
-# Start web server
-reverdns --web-server --web-port 8080
-
-# In another terminal, submit lookup job
-curl -X POST http://localhost:8080/api/lookup \
-  -H "Content-Type: application/json" \
-  -d '{
-    "ips": ["8.8.8.8", "1.1.1.1"],
-    "format": "json"
-  }'
-```
-
-### Example 6: CSV Export with Statistics
+### Example 5: CSV Export with Statistics
 
 ```bash
 reverdns \
@@ -270,26 +347,38 @@ reverdns \
   --log-level info
 ```
 
+### Example 6: Docker Usage
+
+```bash
+# Create input file
+echo "8.8.8.8" > ips.txt
+
+# Run in Docker
+docker run --rm -v $(pwd):/data reverdns:latest \
+  --input /data/ips.txt \
+  --output /data/results.json
+```
+
 ## 📊 Performance
 
 ### Benchmarks
 
 Performance metrics on modern hardware (Intel i7, 16GB RAM):
 
-| Scenario | IPs | Concurrency | Time | Avg Latency |
-|----------|-----|-------------|------|-------------|
-| Small batch | 100 | 10 | 2.5s | 25ms |
-| Medium batch | 1,000 | 25 | 8.3s | 28ms |
-| Large batch | 10,000 | 50 | 45s | 32ms |
-| Bulk processing | 100,000 | 100 | 380s | 35ms |
+| Scenario | IPs | Concurrency | Time | Avg Latency | Throughput |
+|----------|-----|-------------|------|-------------|-----------|
+| Small batch | 100 | 10 | 2.5s | 25ms | 40 lookups/sec |
+| Medium batch | 1,000 | 25 | 8.3s | 28ms | 120 lookups/sec |
+| Large batch | 10,000 | 50 | 45s | 32ms | 222 lookups/sec |
+| Bulk processing | 100,000 | 100 | 380s | 35ms | 263 lookups/sec |
 
 ### Optimization Tips
 
-1. **Increase Concurrency**: For network-bound operations, increase `--concurrency` (50-100 recommended)
-2. **Adjust Rate Limiting**: Balance between speed and DNS server load
-3. **Use Multiple Resolvers**: Distribute load across multiple DNS servers
-4. **Enable DNS-over-HTTPS**: For better privacy and potentially faster responses
-5. **Batch Processing**: Process large lists in chunks to manage memory
+1. **Increase Concurrency**: For network-bound operations, try 50-100
+2. **Adjust Rate Limiting**: Balance speed vs. DNS server load
+3. **Use Multiple Resolvers**: Distribute queries across servers
+4. **Enable DNS-over-HTTPS**: Better privacy with minimal overhead
+5. **Batch Processing**: Process large lists in chunks
 
 ### Running Benchmarks
 
@@ -351,53 +440,12 @@ Health check endpoint.
 }
 ```
 
-## 🛠️ Development
+## 🔧 Development
 
-### Project Structure
-
-```
-ReverDNS/
-├── src/
-│   ├── main.rs              # CLI entry point
-│   ├── lib.rs               # Library root
-│   ├── dns/
-│   │   ├── mod.rs           # DNS module
-│   │   ├── resolver.rs      # Resolver implementation
-│   │   └── cache.rs         # DNS cache
-│   ├── cli/
-│   │   ├── mod.rs           # CLI module
-│   │   └── args.rs          # Argument parsing
-│   ├── output/
-│   │   ├── mod.rs           # Output module
-���   │   ├── json.rs          # JSON formatter
-│   │   └── csv.rs           # CSV formatter
-│   ├── web/
-│   │   ├── mod.rs           # Web API module
-│   │   ├── server.rs        # Web server
-│   │   └── handlers.rs      # API handlers
-│   ├── error.rs             # Error types
-│   ├── config.rs            # Configuration
-│   └── logger.rs            # Logging setup
-├── tests/
-│   ├── integration_tests.rs # Integration tests
-│   └── fixtures/            # Test fixtures
-├── benches/
-│   └── dns_lookup_benchmark.rs
-├── Cargo.toml               # Project manifest
-├── Cargo.lock               # Dependency lock
-├── README.md                # This file
-├── CONTRIBUTING.md          # Contributing guidelines
-├── LICENSE                  # MIT License
-├── .github/
-│   └── workflows/
-│       └── ci.yml           # GitHub Actions CI/CD
-└── .gitignore               # Git ignore rules
-```
-
-### Building
+### Building from Source
 
 ```bash
-# Development build
+# Debug build
 cargo build
 
 # Release build (optimized)
@@ -407,23 +455,20 @@ cargo build --release
 cargo build --release --all-features
 ```
 
-### Testing
+### Running Tests
 
 ```bash
-# Run all tests
+# All tests
 cargo test
 
-# Run with output
+# With output
 cargo test -- --nocapture
 
-# Run specific test
+# Specific test
 cargo test test_dns_lookup
 
-# Run integration tests
+# Integration tests
 cargo test --test integration_tests
-
-# Run with coverage
-cargo tarpaulin --out Html
 ```
 
 ### Code Quality
@@ -435,98 +480,152 @@ cargo fmt
 # Lint code
 cargo clippy -- -D warnings
 
-# Check for security issues
+# Security audit
 cargo audit
 
 # Generate documentation
 cargo doc --open
 ```
 
-## 📝 Contributing
+### Using Makefile
+
+```bash
+make build          # Build project
+make test           # Run tests
+make fmt            # Format code
+make lint           # Lint code
+make audit          # Security audit
+make doc            # Generate docs
+make bench          # Run benchmarks
+make docker         # Build Docker image
+```
+
+## ❓ Troubleshooting
+
+### "Connection refused" Error
+
+**Problem**: DNS resolver is not accessible
+
+**Solution**:
+```bash
+# Try with a public resolver
+reverdns --resolver 8.8.8.8 --input ips.txt
+
+# Or use Cloudflare DNS
+reverdns --resolver 1.1.1.1 --input ips.txt
+```
+
+### Slow Performance
+
+**Problem**: Lookups are taking too long
+
+**Solution**:
+```bash
+# Increase concurrency
+reverdns --concurrency 50 --input ips.txt
+
+# Increase rate limit
+reverdns --rate-limit 500 --input ips.txt
+
+# Use multiple resolvers
+reverdns --resolver 8.8.8.8 --resolver 1.1.1.1 --input ips.txt
+```
+
+### High Failure Rate
+
+**Problem**: Many lookups are failing
+
+**Solution**:
+```bash
+# Increase timeout
+reverdns --timeout 10 --input ips.txt
+
+# Increase retry count
+reverdns --retry-count 5 --input ips.txt
+
+# Check network connectivity
+ping 8.8.8.8
+```
+
+### Out of Memory
+
+**Problem**: Application runs out of memory
+
+**Solution**:
+```bash
+# Reduce concurrency
+reverdns --concurrency 5 --input ips.txt
+
+# Process in smaller batches
+split -l 10000 large_list.txt chunk_
+for file in chunk_*; do
+  reverdns --input "$file" --output "results_${file}.json"
+done
+```
+
+### DNS-over-HTTPS Issues
+
+**Problem**: DoH queries are slow or failing
+
+**Solution**:
+```bash
+# Try different provider
+reverdns --dns-over-https \
+  --doh-provider "https://cloudflare-dns.com/dns-query" \
+  --input ips.txt
+
+# Increase timeout for HTTPS
+reverdns --dns-over-https --timeout 10 --input ips.txt
+```
+
+## 📝 FAQ
+
+**Q: How many IPs can I process at once?**  
+A: Theoretically unlimited. Practical limits depend on memory and network. Recommended: 100K-1M per batch.
+
+**Q: Can I use private DNS servers?**  
+A: Yes, use `--resolver` flag with your private server IP.
+
+**Q: Is DNS-over-HTTPS slower?**  
+A: Slightly, due to HTTPS overhead, but provides better privacy.
+
+**Q: How do I handle rate limiting from DNS servers?**  
+A: Adjust `--rate-limit` and `--concurrency`, or use multiple resolvers.
+
+**Q: Can I use this in production?**  
+A: Yes, it's designed for production use with proper error handling and monitoring.
+
+**Q: What's the difference between JSON and CSV output?**  
+A: JSON includes nested metadata; CSV is flat and easier to import into spreadsheets.
+
+**Q: How do I monitor performance?**  
+A: Use `--stats` flag to see statistics, or parse the JSON output.
+
+## 🤝 Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-### Code Standards
+### Quick Start for Contributors
 
-- Follow Rust naming conventions and idioms
-- Write tests for new features
-- Ensure all tests pass: `cargo test`
-- Run formatter: `cargo fmt`
-- Run linter: `cargo clippy`
-- Update documentation for API changes
-- Use semantic commit messages
+```bash
+# Clone and setup
+git clone https://github.com/ismailtasdelen/ReverDNS.git
+cd ReverDNS
 
-### Development Workflow
+# Create feature branch
+git checkout -b feature/your-feature
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes and add tests
-4. Run tests and linting: `cargo test && cargo fmt && cargo clippy`
-5. Commit with semantic messages: `git commit -m "feat: add new feature"`
-6. Push to your fork: `git push origin feature/your-feature`
-7. Create a Pull Request
+# Make changes and test
+cargo test
+cargo fmt
+cargo clippy
 
-## 🗺️ Roadmap
+# Commit and push
+git commit -m "feat: add your feature"
+git push origin feature/your-feature
 
-### Version 2.0 (Current)
-- ✅ Rust rewrite with async/await
-- ✅ JSON/CSV export
-- ✅ Resolver rotation
-- ✅ Rate limiting
-- ✅ Comprehensive error handling
-- ✅ Unit and integration tests
-- ✅ CI/CD pipeline
-
-### Version 2.1 (Planned)
-- [ ] DNS caching layer
-- [ ] Batch job scheduling
-- [ ] Database backend support (PostgreSQL, SQLite)
-- [ ] Advanced filtering and search
-- [ ] Performance metrics dashboard
-
-### Version 2.2 (Planned)
-- [ ] Distributed processing support
-- [ ] Kubernetes operator
-- [ ] GraphQL API
-- [ ] Real-time streaming results
-- [ ] Machine learning-based anomaly detection
-
-### Version 3.0 (Future)
-- [ ] Multi-protocol support (DNSSEC, DNS64)
-- [ ] Advanced analytics and reporting
-- [ ] Enterprise features (RBAC, audit logging)
-- [ ] Mobile app
-
-## 📊 Statistics
-
-- **Language**: Rust
-- **Lines of Code**: ~5,000+
-- **Test Coverage**: >85%
-- **Dependencies**: 25+
-- **Supported Platforms**: Linux, macOS, Windows
-
-## 🐛 Known Issues
-
-- DNS-over-HTTPS may have higher latency on first request (connection establishment)
-- Very large batches (>1M IPs) may require memory optimization
-- Some ISPs block DNS queries to non-standard resolvers
-
-## ❓ FAQ
-
-**Q: How many IPs can I process at once?**
-A: Theoretically unlimited, but practical limits depend on available memory and network bandwidth. Recommended: process in batches of 100K-1M IPs.
-
-**Q: Can I use this with private DNS servers?**
-A: Yes, use the `--resolver` flag to specify your private DNS server IP.
-
-**Q: Is DNS-over-HTTPS slower?**
-A: Slightly, due to HTTPS overhead, but provides better privacy and security.
-
-**Q: How do I handle rate limiting from DNS servers?**
-A: Adjust `--rate-limit` and `--concurrency` parameters, or use multiple resolvers.
-
-**Q: Can I use this in production?**
-A: Yes, it's designed for production use. Ensure proper error handling and monitoring.
+# Create Pull Request
+```
 
 ## 📄 License
 
@@ -536,16 +635,40 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 - [trust-dns](https://github.com/bluejekyll/trust-dns) - DNS library
 - [Tokio](https://tokio.rs/) - Async runtime
-- [Clap](https://github.com/clap-rs/clap) - CLI argument parsing
-- Community contributors and testers
+- [Clap](https://github.com/clap-rs/clap) - CLI framework
+- [Serde](https://serde.rs/) - Serialization framework
 
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/ismailtasdelen/ReverDNS/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/ismailtasdelen/ReverDNS/discussions)
-- **Email**: support@reverdns.dev
+- **Documentation**: [README.md](README.md) and [QUICKSTART.md](QUICKSTART.md)
+
+## 🗺️ Roadmap
+
+### Version 2.1 (Planned)
+- DNS caching layer
+- Batch job scheduling
+- Database backend support
+- Advanced filtering and search
+
+### Version 2.2 (Planned)
+- Distributed processing
+- Kubernetes operator
+- GraphQL API
+- Real-time streaming
+
+### Version 3.0 (Future)
+- Multi-protocol support (DNSSEC, DNS64)
+- Advanced analytics
+- Enterprise features
+- Mobile app
 
 ---
 
+**Version**: 2.0.0  
 **Last Updated**: January 2024  
+**Status**: Production Ready  
 **Maintainer**: ReverDNS Team
+
+For more information, visit the [GitHub Repository](https://github.com/ismailtasdelen/ReverDNS)

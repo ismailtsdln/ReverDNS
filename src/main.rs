@@ -126,9 +126,11 @@ fn read_ips_from_file(path: &str) -> Result<Vec<String>> {
 }
 
 fn print_statistics(results: &[reverdns::LookupResult], total_time_ms: u128) {
+    use reverdns::LookupStatus;
+
     let successful = results
         .iter()
-        .filter(|r| r.status.to_string() == "success")
+        .filter(|r| r.status == LookupStatus::Success)
         .count();
     let failed = results.len() - successful;
     let avg_latency = if results.is_empty() {
@@ -141,10 +143,17 @@ fn print_statistics(results: &[reverdns::LookupResult], total_time_ms: u128) {
     println!("Total lookups: {}", results.len());
     println!("Successful: {}", successful);
     println!("Failed: {}", failed);
-    println!("Success rate: {:.2}%", (successful as f64 / results.len() as f64) * 100.0);
+
+    if !results.is_empty() {
+        println!("Success rate: {:.2}%", (successful as f64 / results.len() as f64) * 100.0);
+    }
+
     println!("Total time: {}ms", total_time_ms);
     println!("Average latency: {:.2}ms", avg_latency);
-    println!("Throughput: {:.2} lookups/sec", (results.len() as f64 / total_time_ms as f64) * 1000.0);
+
+    if total_time_ms > 0 {
+        println!("Throughput: {:.2} lookups/sec", (results.len() as f64 / total_time_ms as f64) * 1000.0);
+    }
 }
 
 #[cfg(test)]

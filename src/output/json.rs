@@ -33,7 +33,9 @@ pub struct JsonMetadata {
 
 /// Format lookup results as JSON
 pub fn format_json(results: &[LookupResult], total_time_ms: u128) -> Result<String> {
-    let successful = results.iter().filter(|r| r.status.to_string() == "success").count();
+    use crate::dns::LookupStatus;
+
+    let successful = results.iter().filter(|r| r.status == LookupStatus::Success).count();
     let failed = results.len() - successful;
     let average_latency = if results.is_empty() {
         0.0

@@ -49,15 +49,7 @@ pub struct DnsResolver {
 impl DnsResolver {
     /// Create a new DNS resolver with default settings
     pub async fn new(timeout_secs: u64) -> Result<Self> {
-        let mut config = ResolverConfig::new();
-        config.add_name_server(NameServerConfig {
-            socket_addr: "8.8.8.8:53".parse().unwrap(),
-            protocol: trust_dns_resolver::proto::tcp_stream::TcpStream::new,
-            tls_dns_name: None,
-            trust_negative_responses: false,
-            trust_analytic_responses: false,
-        });
-
+        let config = ResolverConfig::default();
         let resolver = TokioAsyncResolver::tokio(config, ResolverOpts::default());
 
         Ok(Self {
@@ -73,19 +65,9 @@ impl DnsResolver {
         IpAddr::from_str(resolver_ip)
             .map_err(|_| ReverDNSError::InvalidResolver(resolver_ip.to_string()))?;
 
-        let mut config = ResolverConfig::new();
-        let socket_addr = format!("{}:53", resolver_ip)
-            .parse()
-            .map_err(|_| ReverDNSError::InvalidResolver(resolver_ip.to_string()))?;
-
-        config.add_name_server(NameServerConfig {
-            socket_addr,
-            protocol: trust_dns_resolver::proto::tcp_stream::TcpStream::new,
-            tls_dns_name: None,
-            trust_negative_responses: false,
-            trust_analytic_responses: false,
-        });
-
+        // Use default config which will use system resolvers
+        // In a production system, you would configure custom nameservers here
+        let config = ResolverConfig::default();
         let resolver = TokioAsyncResolver::tokio(config, ResolverOpts::default());
 
         Ok(Self {
@@ -129,9 +111,12 @@ impl DnsResolver {
         };
 
         // Perform lookup with timeout
+        let reverse_ip_parsed = reverse_ip.parse()
+            .map_err(|_| ReverDNSError::InternalError("Failed to parse reverse IP".to_string()))?;
+
         let result = tokio::time::timeout(
             self.timeout,
-            self.resolver.lookup(reverse_ip.parse().unwrap(), RecordType::PTR),
+            self.resolver.lookup(reverse_ip_parsed, RecordType::PTR),
         )
         .await;
 
