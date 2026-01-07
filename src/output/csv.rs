@@ -1,8 +1,8 @@
 use crate::dns::LookupResult;
 use crate::error::Result;
+use chrono::Utc;
 use csv::Writer;
 use serde::Serialize;
-use chrono::Utc;
 
 #[derive(Debug, Serialize)]
 pub struct CsvRecord {
@@ -21,7 +21,7 @@ pub fn format_csv(results: &[LookupResult]) -> Result<String> {
     let mut wtr = Writer::from_writer(vec![]);
 
     // Write header
-    wtr.write_record(&[
+    wtr.write_record([
         "ip",
         "hostname",
         "status",
@@ -49,10 +49,10 @@ pub fn format_csv(results: &[LookupResult]) -> Result<String> {
     }
 
     wtr.flush()?;
-    let data = wtr.into_inner()
-        .map_err(|e| crate::error::ReverDNSError::InternalError(format!("CSV writer error: {}", e)))?;
-    String::from_utf8(data)
-        .map_err(|e| crate::error::ReverDNSError::Utf8Error(e))
+    let data = wtr.into_inner().map_err(|e| {
+        crate::error::ReverDNSError::InternalError(format!("CSV writer error: {}", e))
+    })?;
+    String::from_utf8(data).map_err(crate::error::ReverDNSError::Utf8Error)
 }
 
 #[cfg(test)]
@@ -62,17 +62,15 @@ mod tests {
 
     #[test]
     fn test_format_csv() {
-        let results = vec![
-            LookupResult {
-                ip: "8.8.8.8".to_string(),
-                hostname: Some("dns.google".to_string()),
-                status: LookupStatus::Success,
-                ttl: Some(3600),
-                latency_ms: 45,
-                resolver: "8.8.8.8".to_string(),
-                error: None,
-            },
-        ];
+        let results = vec![LookupResult {
+            ip: "8.8.8.8".to_string(),
+            hostname: Some("dns.google".to_string()),
+            status: LookupStatus::Success,
+            ttl: Some(3600),
+            latency_ms: 45,
+            resolver: "8.8.8.8".to_string(),
+            error: None,
+        }];
 
         let csv = format_csv(&results).unwrap();
         assert!(csv.contains("8.8.8.8"));
