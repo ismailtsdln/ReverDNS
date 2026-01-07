@@ -1,0 +1,87 @@
+# ReverDNS Configuration File (.reverdns.toml)
+# This file is optional. Command-line arguments take precedence.
+
+[dns]
+# Timeout for each DNS lookup in seconds
+timeout = 5
+
+# Number of concurrent lookups
+concurrency = 10
+
+# Rate limit: lookups per second
+rate_limit = 100
+
+# Number of retries on failure
+retry_count = 3
+
+# Initial backoff in milliseconds
+retry_backoff_ms = 100
+
+[resolvers]
+# Use custom DNS resolvers
+# If empty, uses system default resolvers
+custom = [
+    "8.8.8.8",
+    "1.1.1.1",
+    "9.9.9.9",
+    "208.67.222.222"
+]
+
+[output]
+# Output format: json or csv
+format = "json"
+
+# Include metadata in output
+include_metadata = true
+
+# Pretty print JSON output
+pretty_print = true
+
+[logging]
+# Log level: trace, debug, info, warn, error
+level = "info"
+
+# Log format: text or json
+format = "text"
+
+# Log to file (optional)
+# file = "/var/log/reverdns.log"
+
+[web]
+# Enable web API server
+enabled = false
+
+# Web server port
+port = 8080
+
+# Enable CORS
+cors_enabled = true
+
+# Allowed origins for CORS
+cors_origins = ["*"]
+
+[performance]
+# Enable DNS caching
+cache_enabled = true
+
+# Cache TTL in seconds
+cache_ttl = 3600
+
+# Maximum cache size
+cache_max_size = 10000
+
+# Enable connection pooling
+connection_pooling = true
+
+[security]
+# Enable DNS-over-HTTPS
+dns_over_https = false
+
+# DoH provider URL
+doh_provider = "https://dns.google/dns-query"
+
+# Validate DNSSEC
+validate_dnssec = false
+
+# Enable rate limiting per IP
+rate_limit_per_ip = false

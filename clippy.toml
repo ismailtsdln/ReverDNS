@@ -1,0 +1,6 @@
+# Clippy linter configuration
+[clippy]
+# Warn on all clippy lints by default
+too-many-arguments-threshold = 8
+type-complexity-threshold = 500
+single-char-binding-names-threshold = 5

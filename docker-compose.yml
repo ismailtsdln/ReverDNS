@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  reverdns:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reverdns
+    volumes:
+      - ./data:/data
+      - ./results:/results
+    environment:
+      - RUST_LOG=info
+    command: --help
+    # Uncomment to run with specific IPs
+    # command: 8.8.8.8 1.1.1.1 --output /results/output.json
+
+  reverdns-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: reverdns-web
+    ports:
+      - "8080:8080"
+    environment:
+      - RUST_LOG=info
+    command: --web-server --web-port 8080
+    volumes:
+      - ./results:/results
