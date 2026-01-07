@@ -2,7 +2,6 @@
 
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI/CD](https://github.com/ismailtasdelen/ReverDNS/workflows/CI/badge.svg)](https://github.com/ismailtasdelen/ReverDNS/actions)
 [![Crates.io](https://img.shields.io/crates/v/reverdns.svg)](https://crates.io/crates/reverdns)
 
 **High-performance reverse DNS (PTR) lookup tool** for bulk IP address resolution with JSON/CSV export, resolver rotation, rate limiting, and DNS-over-HTTPS support.
