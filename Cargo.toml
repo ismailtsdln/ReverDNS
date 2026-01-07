@@ -12,7 +12,7 @@ categories = ["command-line-utilities", "network-programming"]
 
 [dependencies]
 tokio = { version = "1.35", features = ["full"] }
-trust-dns-resolver = "0.23"
+trust-dns-resolver = { version = "0.23", features = ["dns-over-https-rustls"] }
 trust-dns-proto = "0.23"
 clap = { version = "4.4", features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }

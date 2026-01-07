@@ -3,26 +3,30 @@ use std::fs;
 use tempfile::TempDir;
 
 #[tokio::test]
+#[tokio::test]
 async fn test_dns_resolver_creation() {
-    let resolver = DnsResolver::new(5).await;
+    let resolver = DnsResolver::new(5, 1, 100).await;
     assert!(resolver.is_ok());
 }
 
 #[tokio::test]
 async fn test_dns_resolver_with_custom_ip() {
-    let resolver = DnsResolver::with_resolver("8.8.8.8", 5).await;
+    // Note: with_resolvers now takes a slice of strings
+    let resolvers = vec!["8.8.8.8".to_string()];
+    let resolver = DnsResolver::with_resolvers(&resolvers, 5, 1, 100, false, None).await;
     assert!(resolver.is_ok());
 }
 
 #[tokio::test]
 async fn test_dns_resolver_invalid_ip() {
-    let resolver = DnsResolver::with_resolver("invalid", 5).await;
+    let resolvers = vec!["invalid".to_string()];
+    let resolver = DnsResolver::with_resolvers(&resolvers, 5, 1, 100, false, None).await;
     assert!(resolver.is_err());
 }
 
 #[tokio::test]
 async fn test_lookup_invalid_ip() {
-    let resolver = DnsResolver::new(5).await.unwrap();
+    let resolver = DnsResolver::new(5, 1, 100).await.unwrap();
     let result = resolver.lookup("not-an-ip").await;
     assert!(result.is_err());
 }
@@ -55,20 +59,18 @@ fn test_file_operations() {
 
 #[test]
 fn test_json_output_format() {
-    use reverdns::{LookupResult, LookupStatus};
     use reverdns::output::format_json;
+    use reverdns::{LookupResult, LookupStatus};
 
-    let results = vec![
-        LookupResult {
-            ip: "8.8.8.8".to_string(),
-            hostname: Some("dns.google".to_string()),
-            status: LookupStatus::Success,
-            ttl: Some(3600),
-            latency_ms: 45,
-            resolver: "8.8.8.8".to_string(),
-            error: None,
-        },
-    ];
+    let results = vec![LookupResult {
+        ip: "8.8.8.8".to_string(),
+        hostname: Some("dns.google".to_string()),
+        status: LookupStatus::Success,
+        ttl: Some(3600),
+        latency_ms: 45,
+        resolver: "8.8.8.8".to_string(),
+        error: None,
+    }];
 
     let json = format_json(&results, 100).unwrap();
     assert!(json.contains("8.8.8.8"));
@@ -79,20 +81,18 @@ fn test_json_output_format() {
 
 #[test]
 fn test_csv_output_format() {
-    use reverdns::{LookupResult, LookupStatus};
     use reverdns::output::format_csv;
+    use reverdns::{LookupResult, LookupStatus};
 
-    let results = vec![
-        LookupResult {
-            ip: "8.8.8.8".to_string(),
-            hostname: Some("dns.google".to_string()),
-            status: LookupStatus::Success,
-            ttl: Some(3600),
-            latency_ms: 45,
-            resolver: "8.8.8.8".to_string(),
-            error: None,
-        },
-    ];
+    let results = vec![LookupResult {
+        ip: "8.8.8.8".to_string(),
+        hostname: Some("dns.google".to_string()),
+        status: LookupStatus::Success,
+        ttl: Some(3600),
+        latency_ms: 45,
+        resolver: "8.8.8.8".to_string(),
+        error: None,
+    }];
 
     let csv = format_csv(&results).unwrap();
     assert!(csv.contains("8.8.8.8"));
